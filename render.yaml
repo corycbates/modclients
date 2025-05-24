@@ -2,7 +2,7 @@ services:
   - type: web
     name: client-management-app
     env: node
-    buildCommand: ./build.sh
+    buildCommand: node production-build.js
     startCommand: NODE_ENV=production node dist/server/index.js
     envVars:
       - key: NODE_ENV
