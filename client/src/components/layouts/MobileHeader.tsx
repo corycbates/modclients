@@ -1,13 +1,12 @@
-import { Search, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MobileHeaderProps {
   title: string;
   onOpenMenu: () => void;
-  onSearch?: () => void;
 }
 
-export function MobileHeader({ title, onOpenMenu, onSearch }: MobileHeaderProps) {
+export function MobileHeader({ title, onOpenMenu }: MobileHeaderProps) {
   return (
     <header className="bg-white shadow md:hidden sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 py-3">
@@ -22,18 +21,6 @@ export function MobileHeader({ title, onOpenMenu, onSearch }: MobileHeaderProps)
           </Button>
           <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
         </div>
-        {onSearch && (
-          <div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onSearch} 
-              className="p-2 text-primary-500 hover:text-primary-700"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-          </div>
-        )}
       </div>
     </header>
   );

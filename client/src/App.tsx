@@ -22,8 +22,7 @@ function App() {
           <div className="min-h-screen flex flex-col md:flex-row">
             <MobileHeader 
               title="Mod Clients" 
-              onOpenMenu={() => setMobileMenuOpen(true)}
-              onSearch={() => console.log("Search")}
+              onOpenMenu={() => setMobileMenuOpen(prev => !prev)}
             />
             
             <Sidebar 

@@ -6,6 +6,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import path from "path";
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 // Handle ES modules path resolution
 const __filename = fileURLToPath(import.meta.url);
@@ -92,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Route for client photo upload
+  // Route for client photo upload - using AWS S3
   app.post("/api/clients/:id/photo", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -127,28 +128,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Generate a unique filename
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const extension = path.extname(photo.name);
-      const fileName = `client-${id}-${uniqueSuffix}${extension}`;
-      const uploadPath = path.join(__dirname, '../uploads/clients', fileName);
-      
-      // Move the file to the uploads directory
-      await photo.mv(uploadPath);
-      
-      // Update client with photo URL
-      const photoUrl = `/uploads/clients/${fileName}`;
-      const updatedClient = await storage.updateClient(id, { photoUrl });
-      
-      if (!updatedClient) {
-        return res.status(500).json({ message: "Failed to update client with photo" });
+      try {
+        // Import the S3 service
+        const { uploadToS3 } = await import('./s3-service');
+        
+        // Upload to S3
+        const photoUrl = await uploadToS3(photo.data, photo.name, id);
+        
+        // Update client with the S3 photo URL
+        const updatedClient = await storage.updateClient(id, { photoUrl });
+        
+        if (!updatedClient) {
+          return res.status(500).json({ message: "Failed to update client with photo" });
+        }
+        
+        res.json({ 
+          message: "Photo uploaded successfully to S3", 
+          photoUrl, 
+          client: updatedClient 
+        });
+      } catch (s3Error) {
+        console.error("Error uploading to S3:", s3Error);
+        
+        // Fallback to local storage if S3 upload fails
+        console.log("Falling back to local storage");
+        
+        // Generate a unique filename
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const extension = path.extname(photo.name);
+        const fileName = `client-${id}-${uniqueSuffix}${extension}`;
+        const uploadPath = path.join(__dirname, '../uploads/clients', fileName);
+        
+        // Ensure directory exists
+        if (!fs.existsSync(path.dirname(uploadPath))) {
+          fs.mkdirSync(path.dirname(uploadPath), { recursive: true });
+        }
+        
+        // Move the file to the uploads directory
+        await photo.mv(uploadPath);
+        
+        // Update client with photo URL
+        const photoUrl = `/uploads/clients/${fileName}`;
+        const updatedClient = await storage.updateClient(id, { photoUrl });
+        
+        if (!updatedClient) {
+          return res.status(500).json({ message: "Failed to update client with photo" });
+        }
+        
+        res.json({ 
+          message: "Photo uploaded successfully to local storage", 
+          photoUrl, 
+          client: updatedClient 
+        });
       }
-      
-      res.json({ 
-        message: "Photo uploaded successfully", 
-        photoUrl, 
-        client: updatedClient 
-      });
     } catch (error) {
       console.error("Error uploading client photo:", error);
       res.status(500).json({ message: "Failed to upload photo" });

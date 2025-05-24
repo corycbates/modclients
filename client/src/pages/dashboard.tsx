@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
-  Users, Calendar, BarChart, PlusCircle, UserPlus, Plus, Search
+  Users, Calendar, BarChart, PlusCircle, UserPlus, Plus, Search, X
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Client, Visit } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { queryClient } from "@/lib/queryClient";
 import { VisitForm } from "@/components/visits/VisitForm";
 import { ClientForm } from "@/components/clients/ClientForm";
@@ -20,7 +20,32 @@ export default function Dashboard() {
   const [showClientModal, setShowClientModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [clientSelectMode, setClientSelectMode] = useState(true);
+  const searchRef = useRef<HTMLDivElement>(null);
+  
+  // Handle clicking outside of search results
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  
+  // Show search results when typing
+  useEffect(() => {
+    if (searchTerm !== "") {
+      setShowSearchResults(true);
+    } else {
+      setShowSearchResults(false);
+    }
+  }, [searchTerm]);
   
   // Fetch recent clients for dashboard
   const { data: clientsData, isLoading: isClientsLoading } = useQuery({
@@ -104,15 +129,141 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex-1 bg-gray-50 pt-6 md:p-8">
+    <div className="flex-1 bg-gray-50 pt-6 px-4 md:p-8">
       <div className="container mx-auto max-w-6xl">
         <header className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Welcome to your client management system</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+              <p className="text-gray-500 mt-1">Welcome to your client management system</p>
+            </div>
+            <div className="mt-4 sm:mt-0 relative" ref={searchRef}>
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search clients..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full md:w-64 pl-10 pr-10 py-2"
+              />
+              {searchTerm !== "" && (
+                <button 
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              
+              {/* Search Results Dropdown */}
+              {showSearchResults && (
+                <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 max-h-96 overflow-y-auto">
+                  <div className="p-2">
+                    <h3 className="text-xs font-semibold text-gray-500 mb-2">Clients</h3>
+                    {clientsData?.clients
+                      ?.filter((client: Client) => 
+                        `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (client.phone && client.phone.includes(searchTerm))
+                      )
+                      .slice(0, 5)
+                      .map((client: Client) => (
+                        <Link href={`/clients/${client.id}`} key={client.id}>
+                          <div className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer">
+                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-300">
+                              {client.photoUrl ? (
+                                <img 
+                                  src={client.photoUrl} 
+                                  alt={`${client.firstName} ${client.lastName}`} 
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="text-xs font-semibold text-gray-500">
+                                  {client.firstName.charAt(0)}{client.lastName.charAt(0)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {client.firstName} {client.lastName}
+                              </span>
+                              <div className="text-xs text-gray-500">{client.phone}</div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    
+                    {clientsData?.clients?.filter((client: Client) => 
+                      `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (client.phone && client.phone.includes(searchTerm))
+                    ).length === 0 && (
+                      <div className="text-sm text-gray-500 p-2">No clients found</div>
+                    )}
+                    
+                    <h3 className="text-xs font-semibold text-gray-500 mt-4 mb-2">Recent Visits</h3>
+                    {visitsData?.visits
+                      ?.filter((visit: Visit) => {
+                        const client = clientsData?.clients?.find((c: Client) => c.id === visit.clientId);
+                        if (!client) return false;
+                        return `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                               (client.phone && client.phone.includes(searchTerm)) ||
+                               (visit.service && visit.service.toLowerCase().includes(searchTerm.toLowerCase()));
+                      })
+                      .slice(0, 3)
+                      .map((visit: Visit) => {
+                        const client = clientsData?.clients?.find((c: Client) => c.id === visit.clientId);
+                        
+                        return (
+                          <Link href={`/clients/${visit.clientId}`} key={visit.id}>
+                            <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-md cursor-pointer">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-300">
+                                  {client && client.photoUrl ? (
+                                    <img 
+                                      src={client.photoUrl} 
+                                      alt={`${client.firstName} ${client.lastName}`} 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="text-xs font-semibold text-gray-500">
+                                      {client ? `${client.firstName.charAt(0)}${client.lastName.charAt(0)}` : '??'}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="ml-2">
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {client ? `${client.firstName} ${client.lastName}` : `Client #${visit.clientId}`}
+                                  </span>
+                                  <div className="text-xs text-gray-500">
+                                    {visit.service || visit.formula || ''} - {formatDate(visit.date)}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {formatCurrency(visit.price)}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                      
+                    {visitsData?.visits?.filter((visit: Visit) => {
+                      const client = clientsData?.clients?.find((c: Client) => c.id === visit.clientId);
+                      if (!client) return false;
+                      return `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             (client.phone && client.phone.includes(searchTerm)) ||
+                             (visit.service && visit.service.toLowerCase().includes(searchTerm.toLowerCase()));
+                    }).length === 0 && (
+                      <div className="text-sm text-gray-500 p-2">No visits found</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
@@ -206,7 +357,7 @@ export default function Dashboard() {
                 </div>
               )}
               
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-4 pt-2">
                 <Button 
                   variant="outline" 
                   className="w-full"
@@ -223,11 +374,6 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Recent Visits</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" className="text-primary-600">
-                    View All
-                  </Button>
-                </div>
               </div>
               <CardDescription>Latest client visits</CardDescription>
             </CardHeader>
@@ -281,7 +427,7 @@ export default function Dashboard() {
                 </div>
               )}
               
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-4 pt-2">
                 <Button 
                   variant="outline" 
                   className="w-full"
@@ -298,9 +444,10 @@ export default function Dashboard() {
 
       {/* Record New Visit Modal */}
       <Dialog open={showVisitModal} onOpenChange={setShowVisitModal}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
+        <DialogContent className="mx-auto w-[95%] max-w-md sm:max-w-xl">
+          
+          <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+            <h2 className="text-xl font-bold text-gray-800">
               {clientSelectMode 
                 ? "Select a Client" 
                 : selectedClientId && allClientsData?.clients 
@@ -314,8 +461,11 @@ export default function Dashboard() {
                     })()
                   : "Record New Visit"
               }
-            </DialogTitle>
-          </DialogHeader>
+            </h2>
+            <Button variant="ghost" size="icon" onClick={() => setShowVisitModal(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           
           {clientSelectMode ? (
             <div className="space-y-4">
@@ -502,7 +652,7 @@ export default function Dashboard() {
 
       {/* Add Client Modal */}
       <Dialog open={showClientModal} onOpenChange={setShowClientModal}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="mx-auto w-[95%] max-w-md sm:max-w-xl">
           <ClientForm
             onClose={() => setShowClientModal(false)}
             onSuccess={() => {

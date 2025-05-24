@@ -157,7 +157,7 @@ export function ClientDetail({ id }: ClientDetailProps) {
   }
 
   return (
-    <div className="flex-1 bg-gray-50 pt-6 md:p-8">
+    <div className="flex-1 bg-gray-50 p-4 md:p-8">
       <div className="container mx-auto max-w-5xl">
         <header className="mb-8">
           <div className="flex items-center mb-4">
@@ -178,16 +178,24 @@ export function ClientDetail({ id }: ClientDetailProps) {
               </Badge>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" className="text-gray-600 border-gray-300">
+              <Button 
+                variant="outline" 
+                className="text-gray-600 border-gray-300"
+                disabled={!client.phone}
+                onClick={() => client.phone && window.open(`tel:${client.phone}`, '_blank')}
+              >
                 <Phone className="mr-2 h-4 w-4" />
                 Call
               </Button>
-              {client.email && (
-                <Button variant="outline" className="text-gray-600 border-gray-300">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Email
-                </Button>
-              )}
+              <Button 
+                variant="outline" 
+                className="text-gray-600 border-gray-300"
+                disabled={!client.email}
+                onClick={() => client.email && window.open(`mailto:${client.email}`, '_blank')}
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Email
+              </Button>
               <Button 
                 onClick={() => setIsAddVisitOpen(true)} 
                 className="bg-blue-500 hover:bg-blue-600 text-white"
@@ -299,9 +307,9 @@ export function ClientDetail({ id }: ClientDetailProps) {
           <div>
             <Card>
               <CardHeader className="border-b border-gray-200">
-                <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-lg">Visit History</CardTitle>
-                  <div className="flex items-center space-x-2">
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <CardTitle className="text-lg">Visit History</CardTitle>
                     <Button 
                       onClick={() => setIsAddVisitOpen(true)} 
                       size="sm"
@@ -310,14 +318,14 @@ export function ClientDetail({ id }: ClientDetailProps) {
                     >
                       Add visit
                     </Button>
-                    <div className="relative w-56">
-                      <Search className="absolute left-3 top-2 h-4 w-4 text-gray-400" />
-                      <Input 
-                        type="text" 
-                        placeholder="Search visits..." 
-                        className="pl-9 py-1 h-9 text-sm w-full"
-                      />
-                    </div>
+                  </div>
+                  <div className="relative w-full md:w-64">
+                    <Search className="absolute left-3 top-2 h-4 w-4 text-gray-400" />
+                    <Input 
+                      type="text" 
+                      placeholder="Search visits..." 
+                      className="pl-9 py-1 h-9 text-sm w-full"
+                    />
                   </div>
                 </div>
               </CardHeader>

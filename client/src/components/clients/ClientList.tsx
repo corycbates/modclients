@@ -117,7 +117,7 @@ export function ClientList() {
   };
 
   return (
-    <div className="flex-1 bg-gray-50 pt-6 md:p-8">
+    <div className="flex-1 bg-gray-50 p-4 md:p-8">
       <div className="container mx-auto max-w-6xl">
         <header className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -125,17 +125,17 @@ export function ClientList() {
               <h1 className="text-2xl font-bold text-gray-800">Clients</h1>
               <p className="text-gray-500 mt-1">Manage your client database</p>
             </div>
-            <div className="mt-4 md:mt-0">
+            <div className="hidden md:block mt-4 md:mt-0">
               <Button
                 onClick={() => setIsAddClientOpen(true)}
-                className="bg-primary-500 hover:bg-primary-600 text-white"
+                className="bg-primary-500 hover:bg-primary-600 text-white md:w-auto"
               >
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add New Client
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4">
             <div className="col-span-1 md:col-span-5">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -148,16 +148,16 @@ export function ClientList() {
                 />
               </div>
             </div>
-            <div className="col-span-1 md:col-span-3 md:flex md:justify-end md:pr-2">
+            <div className="col-span-1 md:col-span-3 block md:flex md:justify-end md:pr-2">
               <Button
                 onClick={() => setIsAddClientOpen(true)}
-                className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                className="mt-2 md:mt-0 w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add Client
               </Button>
             </div>
-            <div className="col-span-1 md:col-span-4">
+            <div className="col-span-1 md:col-span-4 mt-2 md:mt-0">
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by status" />
@@ -198,7 +198,7 @@ export function ClientList() {
                         <ArrowUpDown className="ml-1 h-4 w-4" />
                       </Button>
                     </TableHead>
-                    <TableHead>
+                    <TableHead className="hidden md:table-cell">
                       <Button
                         variant="ghost"
                         onClick={() => handleSort("phone")}
@@ -263,7 +263,7 @@ export function ClientList() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="text-sm text-gray-900">{client.phone}</div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -274,12 +274,12 @@ export function ClientList() {
                       <TableCell className="hidden md:table-cell">
                         {renderStatusBadge(client.status || "active")}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right align-middle">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={(e) => handleEditClient(client, e)}
-                          className="text-primary-500 hover:text-primary-700 mr-3"
+                          className="text-primary-500 hover:text-primary-700 mr-3 hidden md:inline-flex"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>

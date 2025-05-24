@@ -12,7 +12,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisitForm } from "./VisitForm";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -185,26 +185,7 @@ export function VisitList({ clientId, onViewVisit }: VisitListProps) {
                     ? `${visit.notes.substring(0, 30)}...` 
                     : visit.notes}
                 </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewVisit(visit);
-                    }}
-                    className="text-primary-500 hover:text-primary-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => handleEditVisit(visit, e)}
-                    className="text-primary-500 hover:text-primary-700 opacity-0 group-hover:opacity-100 transition-opacity mr-1"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                <TableCell className="text-right align-middle">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -247,6 +228,7 @@ export function VisitList({ clientId, onViewVisit }: VisitListProps) {
       {/* Edit Visit Modal */}
       <Dialog open={isEditVisitOpen} onOpenChange={setIsEditVisitOpen}>
         <DialogContent className="sm:max-w-2xl">
+          <DialogTitle>Edit Visit</DialogTitle>
           {selectedVisit && (
             <VisitForm
               visitData={selectedVisit}
@@ -264,6 +246,7 @@ export function VisitList({ clientId, onViewVisit }: VisitListProps) {
       {/* Add Visit Modal */}
       <Dialog open={isAddVisitOpen} onOpenChange={setIsAddVisitOpen}>
         <DialogContent className="sm:max-w-2xl">
+          <DialogTitle>Add Visit</DialogTitle>
           <VisitForm
             clientId={clientId}
             onClose={() => setIsAddVisitOpen(false)}

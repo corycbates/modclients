@@ -21,10 +21,15 @@ export function Sidebar({ className, mobileMenuOpen, onClose }: SidebarProps) {
   }, [isMobile, mobileMenuOpen]);
 
   useEffect(() => {
+    // Close the sidebar when location changes and we're on mobile
     if (isMobile && mobileMenuOpen) {
-      onClose();
+      // Only close when location changes, not on initial render
+      const timer = setTimeout(() => {
+        onClose();
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [location, isMobile, mobileMenuOpen, onClose]);
+  }, [location]);
 
   const navItems = [
     { 
@@ -54,12 +59,12 @@ export function Sidebar({ className, mobileMenuOpen, onClose }: SidebarProps) {
     }
   ];
 
-  const baseStyles = "bg-white border-r border-gray-200 w-full md:w-64 fixed md:sticky top-0 h-screen md:h-auto z-40 transition-transform duration-300";
+  const baseStyles = "bg-white border-r border-gray-200 w-full md:w-64 fixed md:sticky top-14 md:top-0 h-screen md:h-auto z-40 transition-transform duration-300";
   const mobileStyles = isMobile && !sidebarVisible ? "-translate-x-full" : "translate-x-0";
 
   return (
     <aside className={cn(baseStyles, mobileStyles, className)}>
-      <div className="p-6 border-b border-gray-200">
+      <div className={`p-6 border-b border-gray-200 ${isMobile ? 'hidden' : 'block'}`}>
         <h1 className="text-xl font-bold text-gray-800">Mod Clients</h1>
         <p className="text-sm text-gray-500 mt-1">Client Management System</p>
       </div>
