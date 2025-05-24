@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mod Clients - Client Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .app-container { max-width: 1200px; margin: 0 auto; }
+    .dashboard-card { transition: all 0.3s ease; }
+    .dashboard-card:hover { transform: translateY(-5px); }
+    .badge-active { background-color: #10b981; }
+    .badge-inactive { background-color: #ef4444; }
+    .badge { color: white; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-indigo-600 text-white p-4 shadow-md">
+    <div class="app-container flex justify-between items-center">
+      <h1 class="text-xl font-bold">Mod Clients</h1>
+      <div class="hidden md:flex space-x-4">
+        <a href="#" class="hover:text-indigo-200">Dashboard</a>
+        <a href="#" class="hover:text-indigo-200">Clients</a>
+        <a href="#" class="hover:text-indigo-200">Visits</a>
+      </div>
+      <button class="md:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main class="app-container p-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div class="dashboard-card bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Clients</h3>
+        <p class="text-3xl font-bold text-indigo-600" id="client-count">...</p>
+      </div>
+      <div class="dashboard-card bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Active Clients</h3>
+        <p class="text-3xl font-bold text-green-600" id="active-count">...</p>
+      </div>
+      <div class="dashboard-card bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Recent Visits</h3>
+        <p class="text-3xl font-bold text-blue-600" id="visit-count">...</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-800">Recent Clients</h2>
+          <button class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+            Add Client
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200" id="client-list">
+              <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading clients...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-800">Recent Visits</h2>
+          <button class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+            Add Visit
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200" id="visit-list">
+              <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading visits...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Fetch clients and visits data
+    async function fetchData() {
+      try {
+        // Fetch clients
+        const clientsResponse = await fetch('/api/clients');
+        const clientsData = await clientsResponse.json();
+        
+        // Fetch visits
+        const visitsResponse = await fetch('/api/visits');
+        const visitsData = await visitsResponse.json();
+        
+        // Update dashboard counters
+        document.getElementById('client-count').textContent = clientsData.clients.length;
+        document.getElementById('active-count').textContent = 
+          clientsData.clients.filter(client => client.status === 'active').length;
+        document.getElementById('visit-count').textContent = visitsData.visits.length;
+        
+        // Render client list
+        const clientList = document.getElementById('client-list');
+        if (clientsData.clients.length > 0) {
+          clientList.innerHTML = clientsData.clients.slice(0, 5).map(client => `
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900">${client.firstName} ${client.lastName}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-500">${client.phone}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="badge ${client.status === 'active' ? 'badge-active' : 'badge-inactive'}">${client.status}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <button class="text-indigo-600 hover:text-indigo-900">View</button>
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          clientList.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No clients found</td></tr>';
+        }
+        
+        // Render visit list
+        const visitList = document.getElementById('visit-list');
+        if (visitsData.visits.length > 0) {
+          visitList.innerHTML = visitsData.visits.slice(0, 5).map(visit => {
+            const client = clientsData.clients.find(c => c.id === visit.clientId) || { firstName: '', lastName: '' };
+            const date = new Date(visit.date).toLocaleDateString();
+            return `
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">${client.firstName} ${client.lastName}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-500">${date}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-500">${visit.service}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <button class="text-indigo-600 hover:text-indigo-900">View</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          visitList.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No visits found</td></tr>';
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    }
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchData();
+    });
+  </script>
+</body>
+</html>
